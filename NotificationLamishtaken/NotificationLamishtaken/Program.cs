@@ -18,11 +18,24 @@ namespace NotificationLamishtaken
         {
             try
             {
+                Console.WriteLine("Starting...");
+
                 // Preparations
-                m_chromeInstance = new ChromeDriver("C:\\");
+                try
+                {
+                    Console.WriteLine("Loading chrome driver...");
+                    m_chromeInstance = new ChromeDriver("C:\\");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Chrome driver does not exist! Exception: {0}", ex);
+                    throw;
+                }
+                
                 m_chromeInstance.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
 
                 // Open URL
+                Console.WriteLine("Go to target URL: <URL>");
                 m_chromeInstance.Navigate().GoToUrl("https://www.dira.moch.gov.il/ProjectsList");
 
                 // Get relevant element 
@@ -56,7 +69,7 @@ namespace NotificationLamishtaken
                 foreach (var row in rows)
                 {
                     ICollection<IWebElement> columns = row.FindElements(By.TagName("td"));
-                    Console.WriteLine(row.Text);
+                    Console.WriteLine(string.Join(", ", columns));
                 }
             }
             catch (Exception)
