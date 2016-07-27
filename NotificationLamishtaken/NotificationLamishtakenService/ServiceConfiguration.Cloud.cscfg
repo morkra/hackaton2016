@@ -3,7 +3,7 @@
   <Role name="NotificationLamishtakenWorkerRole">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=kfiroprivatesa;AccountKey=wclB5154QHxPkE6GGrvRrytdKWTOALvvEtici/dVFrgLYQ1mcJSsOtwsh11k5lKdhGdQ8l4K1hH2aWJZaHEDaA==" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=kfiroprivatesa;AccountKey=You_Wish" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.Enabled" value="true" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountUsername" value="kfiro" />
       <Setting name="Microsoft.WindowsAzure.Plugins.RemoteAccess.AccountEncryptedPassword" value="MIIBnQYJKoZIhvcNAQcDoIIBjjCCAYoCAQAxggFOMIIBSgIBADAyMB4xHDAaBgNVBAMME1dpbmRvd3MgQXp1cmUgVG9vbHMCEGJEP7u9Fq2qR6bnjZ8csj0wDQYJKoZIhvcNAQEBBQAEggEASxI7HGkpUc2NLrJKSHy9GwFsTv6mbx727VeZ+SMeOnzfcQXmq5Z6ONHDHLRe9bL7xevxH3zOUneR9vWUf0B/DRfaRx9bX560FxlGkdHix+5fbF4u73mUsjaVAnVi04R6hw3URBpA3B9Hqa+Yox8hpZCWV8uEC7W4tjdsg80EFJGdrvKF4B2v2R4344nlEp4oIuYEHkjcb1eMwuexJgIDE3b4Se9H3YePDTVadvDy9TAD70G0HEFepAqneMtV9st6luj3qc3EbxAc0dor9P7Twm039Tl9WSez2UDVfeewhp/YDUd5hwD0WqSR7rqmkR1Cks6MecE697l2uty1oCTUADAzBgkqhkiG9w0BBwEwFAYIKoZIhvcNAwcECEO8ZWKRbx80gBCygCV/4xWCg1+/+thc9JDo" />
