@@ -16,9 +16,11 @@ namespace NotificationLamishtakenWorkerRole
 {
     public class WorkerRole : RoleEntryPoint
     {
-        const string SiteUrl = "https://www.dira.moch.gov.il/ProjectsList";
+        private const string SiteUrl = "https://www.dira.moch.gov.il/ProjectsList";
+        private const string DriverName = "phantomjs.exe";
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
+        private static string m_currentDirectory = Directory.GetCurrentDirectory();
 
         public override void Run()
         {
@@ -68,7 +70,7 @@ namespace NotificationLamishtakenWorkerRole
                 Trace.TraceInformation("Working");
 
                 // Scheduled to run every 5 minutes
-                if (DateTime.UtcNow.Minute % 5 == 0)
+                //if (DateTime.UtcNow.Minute % 5 == 0)
                 {
                     DoWork();
                 }
@@ -81,20 +83,15 @@ namespace NotificationLamishtakenWorkerRole
             PhantomJSDriver m_phantomJs = null;
             try
             {
-                Diagnostics.TrackTrace("DoWork started", Diagnostics.Severity.Information);
-                var currentDirectory = Directory.GetCurrentDirectory();
-                var fileName = Path.Combine(currentDirectory, "phantomjs.exe");
+                Diagnostics.TrackTrace("DoWork() started", Diagnostics.Severity.Information);
 
-                Diagnostics.TrackTrace(string.Format("Loading driver from {0}", fileName), Diagnostics.Severity.Information);
+                var driverFilePath = Path.Combine(m_currentDirectory, DriverName);
 
-                // TODO: do this only if file does not exist
-                using (var w = new BinaryWriter(new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.ReadWrite)))
-                {
-                    w.Write(Resources.phantomjs);
-                }
+                InstallDriverIfNotExist(driverFilePath);
+                Diagnostics.TrackTrace(string.Format("Loading driver from {0}", driverFilePath),
+                    Diagnostics.Severity.Information);
 
-                m_phantomJs = new PhantomJSDriver(currentDirectory);
-
+                m_phantomJs = new PhantomJSDriver(m_currentDirectory);
                 m_phantomJs.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
 
                 // Open URL
@@ -131,12 +128,22 @@ namespace NotificationLamishtakenWorkerRole
                 // Gets table rows
                 IWebElement tableBody = table.FindElement(By.TagName("tbody"));
                 ICollection<IWebElement> rows = tableBody.FindElements(By.TagName("tr"));
+
+                List<ProjectProperties> OpenRegistrationProjects = new List<ProjectProperties>();
                 foreach (var row in rows)
                 {
                     ICollection<IWebElement> columns = row.FindElements(By.TagName("td"));
-                    IEnumerable<string> texts = columns.Select(col => col.Text);
-                    Diagnostics.TrackTrace(string.Join(", ", texts), Diagnostics.Severity.Information);
+                    var texts = columns.Select(col => col.Text).ToArray();
+                    OpenRegistrationProjects.Add(new ProjectProperties(texts));
                 }
+
+                // Add project for test only
+                OpenRegistrationProjects.Add(new ProjectProperties(RegistrationStatus.Open, "999", DateTime.Now, DateTime.Now.AddDays(10), "כפר שמריהו", "שמריהו הירוקה"));
+                List<ProjectProperties> newProjects = GetNewProjectOpenForRegistration(OpenRegistrationProjects);
+                Diagnostics.TrackTrace(string.Format("Found {0} projects where registration start on {1}", newProjects.Count, DateTime.Today), Diagnostics.Severity.Information);
+
+                // TODO: Send email
+                Diagnostics.TrackTrace("DoWork() completed successfully", Diagnostics.Severity.Information);
             }
             catch (Exception ex)
             {
@@ -148,5 +155,28 @@ namespace NotificationLamishtakenWorkerRole
                 m_phantomJs?.Dispose();
             }
         }
+
+        private static void InstallDriverIfNotExist(string driverFilePath)
+        {
+            if (File.Exists(driverFilePath))
+            {
+                return;
+            }
+
+            // Create the driver file
+            using (var w = new BinaryWriter(new FileStream(driverFilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite))
+                )
+            {
+                w.Write(Resources.phantomjs);
+            }
+        }
+
+        private static List<ProjectProperties> GetNewProjectOpenForRegistration(List<ProjectProperties> projects)
+        {
+            return projects
+                .Where(p => p.StartDate.Date == DateTime.Today)
+                .ToList();
+        }
+
     }
 }
