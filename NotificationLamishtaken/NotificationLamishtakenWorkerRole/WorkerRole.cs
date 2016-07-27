@@ -70,7 +70,7 @@ namespace NotificationLamishtakenWorkerRole
                 Trace.TraceInformation("Working");
 
                 // Scheduled to run every 5 minutes
-                //if (DateTime.UtcNow.Minute % 5 == 0)
+                if (DateTime.UtcNow.Minute % 5 == 0)
                 {
                     DoWork();
                 }
