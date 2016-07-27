@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -76,7 +74,7 @@ namespace NotificationLamishtakenWorkerRole
                 Trace.TraceInformation("Working");
 
                 // Scheduled to run every 5 minutes
-                //if (DateTime.UtcNow.Minute % 5 == 0)
+                if (DateTime.UtcNow.Minute % 5 == 0)
                 {
                     DoWork();
                 }
