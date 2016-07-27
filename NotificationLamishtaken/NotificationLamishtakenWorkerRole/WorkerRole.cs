@@ -74,7 +74,7 @@ namespace NotificationLamishtakenWorkerRole
                 Trace.TraceInformation("Working");
 
                 // Scheduled to run every 5 minutes
-                if (DateTime.UtcNow.Minute % 5 == 0)
+                // if (DateTime.UtcNow.Minute % 5 == 0)
                 {
                     DoWork();
                 }
@@ -201,6 +201,7 @@ namespace NotificationLamishtakenWorkerRole
                 mail.Bcc.Add("mor.ygv@gmail.com, kfirozeri@hotmail.com");
                 mail.From = new MailAddress(sourceEmail);
                 mail.Subject = "מחיר למשתכן - פרוייקטים חדשים נפתחו להרשמה";
+                mail.IsBodyHtml = true;
                 mail.Body = BuildBody(Projects);
                 client.Send(mail);
             }
@@ -212,8 +213,17 @@ namespace NotificationLamishtakenWorkerRole
 
         private static string BuildBody(List<ProjectProperties> projects)
         {
-            string emailBody = "להלן רשימת הפרוייקטים הפתוחים החל מהיום להרשמה:   ";
-            return emailBody + Environment.NewLine + string.Join(Environment.NewLine,projects.Select(p => p.ToString()).ToArray());
+            string emailTitle = "להלן רשימת הפרוייקטים הפתוחים החל מהיום להרשמה";
+            string emailText= string.Join("<br>",projects.Select(p => p.ToStringHTML()).ToArray());
+
+            return "<!DOCTYPE html> " +
+               "<html xmlns=\"http://www.w3.org/1999/xhtml\">" +
+               "<body style=\"font-family:'Century Gothic'\">" +
+                   "<h1 style=\"text-align:right;\">" + emailTitle + "</h1>" +
+                   "<p style=\"text-align:right;\">" + emailText+ "</p>" +
+               "</body>" +
+               "</html>";
+
         }
     }
 }
