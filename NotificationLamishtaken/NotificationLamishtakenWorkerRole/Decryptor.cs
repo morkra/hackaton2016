@@ -9,7 +9,7 @@ namespace NotificationLamishtakenWorkerRole
 {
     public static class Decryptor
     {
-        static string Decrypt(string encryptedItem)
+        public static string Decrypt(string encryptedItem)
         {
             if (string.IsNullOrWhiteSpace(encryptedItem))
             {

@@ -42,6 +42,16 @@ namespace NotificationLamishtakenWorkerRole
 
         #endregion
 
+        public override string ToString()
+        {
+            return string.Format(CultureInfo.InvariantCulture,
+                "מספר הגרלה:{0} \r\n" +
+                " שם הפרויקט:{1} \r\n" +
+                "מיקום:{2} \r\n" +
+                " תאריך פתיחת הרשמה:{3} \r\n" +
+                " תאריך סגירת ההרשמה: {4}", this.Id, this.ProjectName, this.Location, this.StartDate.ToString("d"), this.EndDate.ToString("d"));
+        }
+
         #region Helper Methods
 
         private static RegistrationStatus GetRegistrationStatus(string registrationStatus)
@@ -66,4 +76,5 @@ namespace NotificationLamishtakenWorkerRole
         Close = 1,
         NotRelevant = 99
     }
+
 }

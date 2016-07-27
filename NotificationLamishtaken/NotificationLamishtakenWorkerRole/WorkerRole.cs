@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Mail;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -21,7 +25,9 @@ namespace NotificationLamishtakenWorkerRole
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private readonly ManualResetEvent runCompleteEvent = new ManualResetEvent(false);
         private static string m_currentDirectory = Directory.GetCurrentDirectory();
-
+        private const string smtpHostName = "smtp.gmail.com";
+        private const string emailUserName = "mechirlamishtaken";
+        private const string sourceEmail = "mechirlamishtaken@mail.com";
         public override void Run()
         {
             Trace.TraceInformation("NotificationLamishtakenWorkerRole is running");
@@ -142,7 +148,8 @@ namespace NotificationLamishtakenWorkerRole
                 List<ProjectProperties> newProjects = GetNewProjectOpenForRegistration(OpenRegistrationProjects);
                 Diagnostics.TrackTrace(string.Format("Found {0} projects where registration start on {1}", newProjects.Count, DateTime.Today), Diagnostics.Severity.Information);
 
-                // TODO: Send email
+                // Send email
+                Publish(newProjects);
                 Diagnostics.TrackTrace("DoWork() completed successfully", Diagnostics.Severity.Information);
             }
             catch (Exception ex)
@@ -178,5 +185,37 @@ namespace NotificationLamishtakenWorkerRole
                 .ToList();
         }
 
+        private static void Publish(List<ProjectProperties> Projects)
+        {
+            var passwordDecrypted = Decryptor.Decrypt(ConfigurationManager.AppSettings["emailPassword"]);
+            try
+            {
+                MailMessage mail = new MailMessage();
+                SmtpClient client = new SmtpClient
+                {
+                    Port = 25,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    UseDefaultCredentials = false,
+                    Host = smtpHostName,
+                    Credentials = new System.Net.NetworkCredential(emailUserName, passwordDecrypted),
+                    EnableSsl = true
+                };
+                mail.Bcc.Add("mor.ygv@gmail.com, kfirozeri@hotmail.com");
+                mail.From = new MailAddress(sourceEmail);
+                mail.Subject = "מחיר למשתכן - פרוייקטים חדשים נפתחו להרשמה";
+                mail.Body = BuildBody(Projects);
+                client.Send(mail);
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
+        private static string BuildBody(List<ProjectProperties> projects)
+        {
+            string emailBody = "להלן רשימת הפרוייקטים הפתוחים החל מהיום להרשמה:   ";
+            return emailBody + Environment.NewLine + string.Join(Environment.NewLine,projects.Select(p => p.ToString()).ToArray());
+        }
     }
 }
