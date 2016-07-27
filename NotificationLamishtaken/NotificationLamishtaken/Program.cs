@@ -7,7 +7,6 @@ using System.Resources;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NotificationLamishtaken.Properties;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
@@ -16,7 +15,9 @@ namespace NotificationLamishtaken
 {
     internal class Program
     {
-        private static IWebDriver m_chromeInstance;
+        private static void Main(string[] args)
+        { }
+       /* private static IWebDriver m_chromeInstance;
         private const string SiteUrl = "https://www.dira.moch.gov.il/ProjectsList";
 
         private static void Main(string[] args)
@@ -95,6 +96,6 @@ namespace NotificationLamishtaken
                 m_chromeInstance.Quit();
                 File.Delete(fileName);
             }
-        }
+        }*/
     }
 }
