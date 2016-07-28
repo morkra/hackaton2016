@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.ServiceRuntime;
@@ -74,7 +75,7 @@ namespace NotificationLamishtakenWorkerRole
                 Trace.TraceInformation("Working");
 
                 // Scheduled to run every 5 minutes
-                if (DateTime.UtcNow.Minute % 5 == 0)
+                //if (DateTime.UtcNow.Minute % 5 == 0)
                 {
                     DoWork();
                 }
@@ -90,10 +91,9 @@ namespace NotificationLamishtakenWorkerRole
                 Diagnostics.TrackTrace("DoWork() started", Diagnostics.Severity.Information);
 
                 var driverFilePath = Path.Combine(m_currentDirectory, DriverName);
-
                 InstallDriverIfNotExist(driverFilePath);
-                Diagnostics.TrackTrace(string.Format("Loading driver from {0}", driverFilePath),
-                    Diagnostics.Severity.Information);
+
+                Diagnostics.TrackTrace(string.Format("Loading driver from {0}", driverFilePath), Diagnostics.Severity.Information);
 
                 m_phantomJs = new PhantomJSDriver(m_currentDirectory);
                 m_phantomJs.Manage().Timeouts().ImplicitlyWait(TimeSpan.FromSeconds(60));
@@ -103,10 +103,7 @@ namespace NotificationLamishtakenWorkerRole
                 m_phantomJs.Navigate().GoToUrl(SiteUrl);
 
                 // Get relevant element 
-                var selectionLayout =
-                    m_phantomJs.FindElement(By.CssSelector("div.row.col-lg-12.col-md-12.col-xs-12.dark-blue-box"));
-
-                // var projectStateSelectionLayout = selectionLayout.FindElement(By.CssSelector("div.col-lg-3.col-md-3.col-xs-12"));
+                var selectionLayout = m_phantomJs.FindElement(By.CssSelector("div.row.col-lg-12.col-md-12.col-xs-12.dark-blue-box"));
                 var selector = selectionLayout.FindElement(By.Id("slctStatus"));
                 var selectElement = new SelectElement(selector);
 
@@ -115,8 +112,7 @@ namespace NotificationLamishtakenWorkerRole
 
                 // Go
                 var wait = new WebDriverWait(m_phantomJs, TimeSpan.FromSeconds(10));
-                var button =
-                    wait.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector("a.btn.btn-success.btn-green")));
+                var button = wait.Until(ExpectedConditions.ElementToBeClickable(By.CssSelector("a.btn.btn-success.btn-green")));
 
                 // TODO: find a better way to wait for the button to be clickable
                 Thread.Sleep((int) TimeSpan.FromSeconds(5).TotalMilliseconds);
@@ -126,28 +122,36 @@ namespace NotificationLamishtakenWorkerRole
                 // TODO: find a better way to wait for the button to be clickable
                 Thread.Sleep((int) TimeSpan.FromSeconds(5).TotalMilliseconds);
 
-                // Now we have the table with relevant data
+                // Get the table with relevant data
                 var table = m_phantomJs.FindElement(By.ClassName("table-responsive"));
 
-                // Gets table rows
+                // Get table rows
                 IWebElement tableBody = table.FindElement(By.TagName("tbody"));
                 ICollection<IWebElement> rows = tableBody.FindElements(By.TagName("tr"));
 
                 List<ProjectProperties> OpenRegistrationProjects = new List<ProjectProperties>();
                 foreach (var row in rows)
                 {
-                    ICollection<IWebElement> columns = row.FindElements(By.TagName("td"));
-                    var texts = columns.Select(col => col.Text).ToArray();
-                    OpenRegistrationProjects.Add(new ProjectProperties(texts));
+                    var columns = row
+                        .FindElements(By.TagName("td"))
+                        .Select(col => col.Text)
+                        .ToArray();
+
+                    OpenRegistrationProjects.Add(new ProjectProperties(columns));
                 }
 
-                // Add project for test only
+                // Add project for tests only
                 OpenRegistrationProjects.Add(new ProjectProperties(RegistrationStatus.Open, "999", DateTime.Now, DateTime.Now.AddDays(10), "כפר שמריהו", "שמריהו הירוקה"));
-                List<ProjectProperties> newProjects = GetNewProjectOpenForRegistration(OpenRegistrationProjects);
+
+                // Get new projects opened for registration today
+                List<ProjectProperties> newProjects = GetNewProjectsOpenForRegistration(OpenRegistrationProjects);
                 Diagnostics.TrackTrace(string.Format("Found {0} projects where registration start on {1}", newProjects.Count, DateTime.Today), Diagnostics.Severity.Information);
 
+                List<ProjectProperties> nearExpiredProjects = GetNearExpiredProjectsOpenForRegistration(OpenRegistrationProjects);
+                Diagnostics.TrackTrace(string.Format("Found {0} projects where registration to be expired tomorrow", newProjects.Count), Diagnostics.Severity.Information);
+
                 // Send email
-                Publish(newProjects);
+                //Publish(newProjects);
                 Diagnostics.TrackTrace("DoWork() completed successfully", Diagnostics.Severity.Information);
             }
             catch (Exception ex)
@@ -176,16 +180,25 @@ namespace NotificationLamishtakenWorkerRole
             }
         }
 
-        private static List<ProjectProperties> GetNewProjectOpenForRegistration(List<ProjectProperties> projects)
+        private static List<ProjectProperties> GetNewProjectsOpenForRegistration(List<ProjectProperties> projects)
         {
             return projects
                 .Where(p => p.StartDate.Date == DateTime.Today)
                 .ToList();
         }
 
+        private static List<ProjectProperties> GetNearExpiredProjectsOpenForRegistration(List<ProjectProperties> projects)
+        {
+            return projects
+                .Where(p => p.EndDate.Date == DateTime.Today.AddDays(1))
+                .ToList();
+        }
+
         private static void Publish(List<ProjectProperties> Projects)
         {
             var passwordDecrypted = Decryptor.Decrypt(ConfigurationManager.AppSettings["emailPassword"]);
+            var emailToList = Decryptor.Decrypt(ConfigurationManager.AppSettings["emailToList"]);
+
             try
             {
                 MailMessage mail = new MailMessage();
@@ -198,7 +211,7 @@ namespace NotificationLamishtakenWorkerRole
                     Credentials = new System.Net.NetworkCredential(emailUserName, passwordDecrypted),
                     EnableSsl = true
                 };
-                mail.Bcc.Add("mor.ygv@gmail.com, kfirozeri@hotmail.com");
+                mail.Bcc.Add(emailToList);
                 mail.From = new MailAddress(sourceEmail);
                 mail.Subject = "מחיר למשתכן - פרוייקטים חדשים נפתחו להרשמה";
                 mail.Body = BuildBody(Projects);
